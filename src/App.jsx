@@ -1,27 +1,25 @@
 import React, { useState } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { COURSES } from './config/courses';
 import { useAttendance } from './hooks/useAttendance';
-import { DateSelector } from './components/DateSelector';
-import { CourseCard } from './components/CourseCard';
-import { StatsOverview } from './components/StatsOverview';
+import { TodayView } from './components/TodayView';
+import { CalendarView } from './components/CalendarView';
+import { Stats } from './components/Stats';
+import { isWeekend } from './utils/calculations';
 
 export default function App() {
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
-  const { attendance, loading, error, markAttendance } = useAttendance();
+  const { attendance, loading, error, syncing, markAttendance } = useAttendance();
+  const [showCalendar, setShowCalendar] = useState(false);
 
-  const handleMarkAttendance = async (courseCode, status) => {
-    await markAttendance(courseCode, selectedDate, status);
-  };
+  const today = new Date().toISOString().split('T')[0];
+  const isTodayWeekend = isWeekend(today);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <div className="text-xl text-gray-600">Loading...</div>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <div className="text-sm text-gray-600">Loading attendance...</div>
         </div>
       </div>
     );
@@ -29,12 +27,12 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md">
-          <div className="text-red-600 text-xl font-bold mb-2">Error</div>
-          <div className="text-gray-700">{error}</div>
-          <div className="mt-4 text-sm text-gray-600">
-            Make sure your Supabase credentials are set correctly in .env.local
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg border border-red-200 p-6 max-w-md">
+          <div className="text-red-600 font-semibold mb-2">Connection Error</div>
+          <div className="text-sm text-gray-700 mb-4">{error}</div>
+          <div className="text-xs text-gray-500">
+            Check your Supabase credentials in .env.local
           </div>
         </div>
       </div>
@@ -42,37 +40,72 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
-          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                <Calendar className="text-indigo-600" />
-                Attendance Tracker
-              </h1>
-              <p className="text-gray-600 mt-2">Track your college attendance effortlessly</p>
-            </div>
-            <DateSelector 
-              selectedDate={selectedDate} 
-              onDateChange={setSelectedDate} 
-            />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {isTodayWeekend ? "It's the weekend! Enjoy your time off." : 'Mark your attendance for today'}
+            </p>
           </div>
-
-          <div className="space-y-4">
-            {COURSES.map(course => (
-              <CourseCard
-                key={course.code}
-                course={course}
-                attendance={attendance}
-                selectedDate={selectedDate}
-                onMarkAttendance={handleMarkAttendance}
-              />
-            ))}
-          </div>
+          <button
+            onClick={() => setShowCalendar(!showCalendar)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              showCalendar 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <CalendarIcon size={18} />
+            {showCalendar ? 'Today View' : 'Calendar'}
+          </button>
         </div>
 
-        <StatsOverview courses={COURSES} attendance={attendance} />
+        <div className="space-y-4">
+          <Stats courses={COURSES} attendance={attendance} />
+          
+          {isTodayWeekend && !showCalendar ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+              <CalendarIcon className="mx-auto text-gray-400 mb-3" size={48} />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Weekend Break</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                No classes today. Use the calendar to view or edit past attendance.
+              </p>
+              <button
+                onClick={() => setShowCalendar(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+              >
+                <CalendarIcon size={18} />
+                Open Calendar
+              </button>
+            </div>
+          ) : (
+            <>
+              {showCalendar ? (
+                <CalendarView 
+                  courses={COURSES} 
+                  attendance={attendance}
+                  onMarkAttendance={markAttendance}
+                  syncing={syncing}
+                />
+              ) : (
+                <TodayView 
+                  courses={COURSES} 
+                  attendance={attendance}
+                  onMarkAttendance={markAttendance}
+                  syncing={syncing}
+                />
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="mt-6 text-center text-xs text-gray-500">
+          {showCalendar 
+            ? 'Weekends are automatically hidden • Click any cell to toggle' 
+            : 'Click to mark: Present → Absent → Clear'}
+        </div>
       </div>
     </div>
   );

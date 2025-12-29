@@ -5,6 +5,7 @@ export const useAttendance = () => {
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [syncing, setSyncing] = useState({});
 
   const fetchAttendance = async () => {
     try {
@@ -25,40 +26,47 @@ export const useAttendance = () => {
   };
 
   const markAttendance = async (courseCode, date, status) => {
-    try {
-      const { error } = await supabase
-        .from('attendance')
-        .upsert({ 
-          course_code: courseCode, 
-          date, 
-          status 
-        }, { 
-          onConflict: 'course_code,date' 
-        });
+    const syncKey = `${courseCode}-${date}`;
+    
+    // Optimistic update
+    setAttendance(prev => {
+      const filtered = prev.filter(a => !(a.course_code === courseCode && a.date === date));
+      if (status) {
+        return [...filtered, { course_code: courseCode, date, status }];
+      }
+      return filtered;
+    });
 
-      if (error) throw error;
-      await fetchAttendance();
+    // Show subtle loader
+    setSyncing(prev => ({ ...prev, [syncKey]: true }));
+
+    try {
+      if (status) {
+        const { error } = await supabase
+          .from('attendance')
+          .upsert({ course_code: courseCode, date, status }, { onConflict: 'course_code,date' });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('attendance')
+          .delete()
+          .match({ course_code: courseCode, date });
+        if (error) throw error;
+      }
+      
       return { success: true };
     } catch (err) {
       setError(err.message);
       console.error('Error marking attendance:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  const deleteAttendance = async (courseCode, date) => {
-    try {
-      const { error } = await supabase
-        .from('attendance')
-        .delete()
-        .match({ course_code: courseCode, date });
-
-      if (error) throw error;
+      // Revert on error
       await fetchAttendance();
-      return { success: true };
-    } catch (err) {
-      setError(err.message);
       return { success: false, error: err.message };
+    } finally {
+      setSyncing(prev => {
+        const updated = { ...prev };
+        delete updated[syncKey];
+        return updated;
+      });
     }
   };
 
@@ -70,8 +78,8 @@ export const useAttendance = () => {
     attendance,
     loading,
     error,
+    syncing,
     markAttendance,
-    deleteAttendance,
     refetch: fetchAttendance
   };
 };
