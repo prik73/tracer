@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { COURSES } from './config/courses';
 import { useAttendance } from './hooks/useAttendance';
 import { TodayView } from './components/TodayView';
 import { CalendarView } from './components/CalendarView';
+import { TimetableView } from './components/TimetableView';
 import { Stats } from './components/Stats';
 import { isWeekend } from './utils/calculations';
 
 export default function App() {
   const { attendance, loading, error, syncing, markAttendance } = useAttendance();
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showTimetable, setShowTimetable] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const isTodayWeekend = isWeekend(today);
@@ -49,23 +51,44 @@ export default function App() {
               {isTodayWeekend ? "It's the weekend! Enjoy your time off." : 'Mark your attendance for today'}
             </p>
           </div>
-          <button
-            onClick={() => setShowCalendar(!showCalendar)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              showCalendar 
-                ? 'bg-indigo-600 text-white' 
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <CalendarIcon size={18} />
-            {showCalendar ? 'Today View' : 'Calendar'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setShowTimetable(!showTimetable);
+                if (!showTimetable) setShowCalendar(false);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showTimetable 
+                  ? 'bg-purple-600 text-white' 
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Clock size={18} />
+              Timetable
+            </button>
+            <button
+              onClick={() => {
+                setShowCalendar(!showCalendar);
+                if (!showCalendar) setShowTimetable(false);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showCalendar 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <CalendarIcon size={18} />
+              {showCalendar ? 'Today View' : 'Calendar'}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
-          <Stats courses={COURSES} attendance={attendance} />
+          {!showTimetable && <Stats courses={COURSES} attendance={attendance} />}
           
-          {isTodayWeekend && !showCalendar ? (
+          {showTimetable ? (
+            <TimetableView onClose={() => setShowTimetable(false)} />
+          ) : isTodayWeekend && !showCalendar ? (
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
               <CalendarIcon className="mx-auto text-gray-400 mb-3" size={48} />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Weekend Break</h3>
@@ -102,7 +125,9 @@ export default function App() {
         </div>
 
         <div className="mt-6 text-center text-xs text-gray-500">
-          {showCalendar 
+          {showTimetable 
+            ? 'View your weekly class schedule' 
+            : showCalendar 
             ? 'Weekends are automatically hidden • Click any cell to toggle' 
             : 'Click to mark: Present → Absent → Clear'}
         </div>
