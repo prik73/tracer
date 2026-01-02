@@ -1,20 +1,60 @@
-import React, { useState } from 'react';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar as CalendarIcon, Clock, LogOut } from 'lucide-react';
 import { COURSES } from './config/courses';
 import { useAttendance } from './hooks/useAttendance';
 import { TodayView } from './components/TodayView';
 import { CalendarView } from './components/CalendarView';
 import { TimetableView } from './components/TimetableView';
 import { Stats } from './components/Stats';
+import { Login } from './components/Login';
 import { isWeekend } from './utils/calculations';
+import { isAuthenticated, removeToken } from './lib/auth';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const { attendance, loading, error, syncing, markAttendance } = useAttendance();
   const [showCalendar, setShowCalendar] = useState(false);
   const [showTimetable, setShowTimetable] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const isTodayWeekend = isWeekend(today);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const authenticated = await isAuthenticated();
+      setIsLoggedIn(authenticated);
+      setIsCheckingAuth(false);
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    removeToken();
+    setIsLoggedIn(false);
+  };
+
+  // Show loading while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <div className="text-sm text-gray-600">Checking authentication...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!isLoggedIn) {
+    return <Login onLoginSuccess={handleLogin} />;
+  }
 
   if (loading) {
     return (
@@ -43,7 +83,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
@@ -79,6 +119,14 @@ export default function App() {
             >
               <CalendarIcon size={18} />
               {showCalendar ? 'Today View' : 'Calendar'}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors"
+              title="Logout"
+            >
+              <LogOut size={18} />
+              Logout
             </button>
           </div>
         </div>
