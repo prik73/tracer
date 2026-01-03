@@ -30,18 +30,18 @@ export function TimetableView({ onClose }) {
         {code: 'CSE-101', name: 'Data Structures', room: 'LT3 Hall', color: 'bg-purple-400'},
         {code: 'EO-101', name: 'Fund. of EE', room: 'LT3.1A', color: 'bg-indigo-500'},
         {code: 'MA-102', name: 'Eng. Math-II', room: 'LT1.1A', color: 'bg-teal-500'},
-        null, null,
+        null,
         {code: 'EO-202N', name: 'Digital Circuits', room: 'LT3.1A', color: 'bg-red-400'},
-        null, null,
+        null, null, null,
         {code: 'LAB-2', name: 'Laboratory', room: 'Lab', color: 'bg-yellow-500', span: 2}
       ],
       'WED': [
         {code: 'CSE-101', name: 'Data Structures', room: 'LT3 Hall', color: 'bg-purple-400'},
         {code: 'EO-101', name: 'Fund. of EE', room: 'LT3.1A', color: 'bg-indigo-500'},
         {code: 'MA-102', name: 'Eng. Math-II', room: 'LT1.1A', color: 'bg-teal-500'},
-        null, null,
+        null,
         {code: 'EO-202N', name: 'Digital Circuits', room: 'LT3.1A', color: 'bg-red-400'},
-        null, null,
+        null, null, null,
         {code: 'LAB-3', name: 'Laboratory', room: 'Lab', color: 'bg-yellow-500', span: 2}
       ],
       'THU': [
@@ -56,9 +56,9 @@ export function TimetableView({ onClose }) {
         {code: 'CSE-101', name: 'Data Structures', room: 'LT3 Hall', color: 'bg-purple-400'},
         {code: 'EO-101', name: 'Fund. of EE', room: 'LT3.1A', color: 'bg-indigo-500'},
         {code: 'MA-102', name: 'Eng. Math-II', room: 'LT1.1A', color: 'bg-teal-500'},
-        null, null,
-        {code: 'EO-202N', name: 'Digital Circuits', room: 'LT3.1A', color: 'bg-red-400'},
         null,
+        {code: 'EO-202N', name: 'Digital Circuits', room: 'LT3.1A', color: 'bg-red-400'},
+        null, null,
         {code: 'HLM-153', name: 'Education & Self', room: 'LT1.2B', color: 'bg-cyan-400'},
         null, null
       ]
